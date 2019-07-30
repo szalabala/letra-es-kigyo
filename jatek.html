@@ -64,14 +64,14 @@ var myGameInfo = {
 }
 var myGameArea = {
     table_img : "snake_ladder_1.jpg",
-	table_rows : 2,
+	table_rows : 10,
 	table_cols : 10,
 }
 
 function playerWins(n) {
   document.getElementById("dice_button").disabled = false;
   document.getElementById('dice_button').onmousedown = function() {startGame();};
-  //document.getElementById("dice_button").textarea = ". ÚJRAKEZDÉS .";
+  //document.getElementById("dice_button").textarea = ". ÃšJRAKEZDÃ‰S .";
   document.getElementById("img-table").src=myGameInfo.player[n].pic;
   for (var i=1; i <= MAX_PLAYERS; i++) {
     document.getElementById("player"+i).style.display='none';
