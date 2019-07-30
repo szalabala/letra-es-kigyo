@@ -241,7 +241,6 @@ function togglePlayer(n) {
   if (typeof myGameInfo.button2idx[n] === 'undefined') {
 	  //document.getElementById("button_p"+n+"b").disabled = true;
 	  document.getElementById("button_p"+n).style.filter = 'grayscale(1)';
-	  delete document.getElementById("player"+myGameInfo.button2idx[n]+"-pic").style.filter;
 	  var pdiv = document.getElementById("player"+(numPlayers+1));
 	  pdiv.style.display='flex';
 	  console.log("toggle " + JSON.stringify(myGameInfo.player[numPlayers],null,2));
@@ -249,10 +248,11 @@ function togglePlayer(n) {
 	  //myGameInfo.player[numPlayers].pos = 1;
 	  //myGameInfo.player[numPlayers].roll = 0;
 	  document.getElementById("player"+(numPlayers+1)+"-pic").src = myGameInfo.player[numPlayers].pic;
+	  delete document.getElementById("player"+(numPlayers+1)+"-pic").style.filter;
 	  //updatePlayerUI(numPlayers);
 	  if ((currPlayer == 0) && (myGameInfo.player[0].pos != 1)) {
 		 currPlayer = numPlayers;
-         document.getElementById("img_currentPlayer").src=myGameInfo.player[numPlayers].pic;
+          document.getElementById("img_currentPlayer").src=myGameInfo.player[numPlayers].pic;
 	  }
 	  myGameInfo.player[numPlayers].state = 1;
 	  updatePlayer(numPlayers,1);
