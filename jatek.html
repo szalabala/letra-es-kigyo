@@ -248,7 +248,7 @@ function togglePlayer(n) {
 	  //myGameInfo.player[numPlayers].pos = 1;
 	  //myGameInfo.player[numPlayers].roll = 0;
 	  document.getElementById("player"+(numPlayers+1)+"-pic").src = myGameInfo.player[numPlayers].pic;
-	  delete document.getElementById("player"+(numPlayers+1)+"-pic").style.filter;
+	  document.getElementById("player"+(numPlayers+1)+"-pic").style.filter = 'none';
 	  //updatePlayerUI(numPlayers);
 	  if ((currPlayer == 0) && (myGameInfo.player[0].pos != 1)) {
 		 currPlayer = numPlayers;
