@@ -23,7 +23,36 @@ textarea { resize:none; }
 <script>
 var MAX_PLAYERS = 6;
 var myPlayerPics = {
-   img : [ "snake-4b.jpg", "figure1.png", "figure2.png", "figure3.png", "figure4.png", "figure5.png", "figure6.png" ]
+   img : [ "snake-4b.jpg", "figure1.png", "figure2.png", "figure3.png", "figure4.png", "figure7.png", "figure6.png" ]
+}
+var tables = [ { img:'table_6x5.jpg', rows:5, cols: 6, dice: 4
+               , slide : { 3:22, 5:8, 11:26, 20:29, 17:4, 19:7, 21:9, 27:1 } }
+             , { img:'table_100.jpg', rows:10, cols: 10, dice: 6
+			   , slide : { 2:37, 10:32, 27:46, 33:6, 41:20, 49:9, 51:68, 56:53
+	                     , 61:79, 62:5, 65:84, 71:91, 81:100, 87:16, 93:73, 95:75, 98:64 } }
+             , { img:'table_100_canada.jpg', rows:10, cols: 10, dice: 6
+			   , slide: { 4:14, 9:31, 20:38, 28:76, 37:56, 40:42, 61:82, 71:91, 86:96
+			            , 17:6, 23:3, 35:8, 54:48, 62:19, 64:59, 67:52, 87:25, 93:72, 98:77 } }
+];
+var myGameInfo = {
+   table_idx : 0,
+   dice : 6,
+   player : [ { name:"player1", pos:0, roll:0, x:0, y:0, pic:0, state:0} ,
+              { name:"player2", pos:0, roll:0, x:0, y:0, pic:0, state:0} ,
+              { name:"player3", pos:0, roll:0, x:0, y:0, pic:0, state:0} ,
+              { name:"player4", pos:0, roll:0, x:0, y:0, pic:0, state:0} ,
+              { name:"player5", pos:0, roll:0, x:0, y:0, pic:0, state:0} ,
+              { name:"player6", pos:0, roll:0, x:0, y:0, pic:0, state:0} ,
+            ],
+	slider : { 2:37, 10:32, 27:46, 33:6, 41:20, 49:9, 51:68, 56:53
+	   , 61:79, 62:5, 65:84, 71:91, 81:100, 87:16, 93:73, 95:75, 98:64 },
+	button2idx: {}
+}
+var myGameArea = {
+    table_img : "table_100.jpg",
+	table_idx : 0,
+	table_rows : 10,
+	table_cols : 10,
 }
 var numPlayers = 0;
 var currPlayer = 0;
@@ -37,40 +66,38 @@ var n = 1;
 var num_players = 2;
 
 function startGame() {
-    document.getElementById("img-table").src=myPlayerPics.img[0];
+    document.getElementById("img-table").src = tables[myGameInfo.table_idx].img;
+	myGameArea.table_rows = tables[myGameInfo.table_idx].rows;
+	myGameArea.table_cols = tables[myGameInfo.table_idx].cols;
+	myGameInfo.slider = tables[myGameInfo.table_idx].slide;
+	myGameInfo.dice = tables[myGameInfo.table_idx].dice;
     document.getElementById("dice_button").disabled = true;
 
 	document.getElementById('dice_button').onmousedown = function() {rollDice();};
-    document.getElementById("dice_button").textarea = ". DOB&Aacute;S .";
+	document.getElementById("dice_button").style.filter = 'invert(40%)';
+	
     for (var i=1; i <= MAX_PLAYERS; i++) {
         document.getElementById("button_p"+i).src = myPlayerPics.img[i];
         document.getElementById("button_p"+i+"b").disabled = false;
         document.getElementById("button_p"+i).style.filter = 'grayscale(0)';
         document.getElementById("player"+i).style.display='none';
+		myGameInfo.player[i-1].pos = 0;
+		delete myGameInfo.button2idx[i]
     }
-}
-var myGameInfo = {
-   player : [ { name:"player1", pos:0, roll:0, x:0, y:0, pic:0} ,
-              { name:"player2", pos:0, roll:0, x:0, y:0, pic:0} ,
-              { name:"player3", pos:0, roll:0, x:0, y:0, pic:0} ,
-              { name:"player4", pos:0, roll:0, x:0, y:0, pic:0} ,
-              { name:"player5", pos:0, roll:0, x:0, y:0, pic:0} ,
-              { name:"player6", pos:0, roll:0, x:0, y:0, pic:0} ,
-            ],
-	slider : { 2:37, 10:32, 27:46, 33:6, 41:20, 49:9, 51:68, 56:53
-	   , 61:79, 62:5, 65:84, 71:91, 81:100, 87:16, 93:73, 95:75, 98:64 }
-}
-var myGameArea = {
-    table_img : "snake_ladder_1.jpg",
-	table_rows : 10,
-	table_cols : 10,
+	numPlayers = 0;
+	currPlayer = 0;
+	funcOnResize();
 }
 
 function playerWins(n) {
+  var imgw = document.getElementById("img-table").clientWidth;
+  var imgh = document.getElementById("img-table").clientHeight;
   document.getElementById("dice_button").disabled = false;
   document.getElementById('dice_button').onmousedown = function() {startGame();};
   //document.getElementById("dice_button").textarea = ". ÚJRAKEZDÉS .";
   document.getElementById("img-table").src=myGameInfo.player[n].pic;
+  document.getElementById("img-table").width=imgw;
+  document.getElementById("img-table").height=imgh;
   for (var i=1; i <= MAX_PLAYERS; i++) {
     document.getElementById("player"+i).style.display='none';
     document.getElementById("button_p"+i+"b").disabled = true;
@@ -83,22 +110,13 @@ function updateGameArea() {
     var x, height, gap, minHeight, maxHeight, minGap, maxGap;
     myScore.text="SCORE: " + myGameArea.frameNo;
     myScore.update();
-	document.getElementById("score-text").textContent=myGameArea.frameNo;
-	document.getElementById("roll-text").textContent=myDice.text;
-	document.getElementById("roll-code").textContent=myDice.text;
-	document.getElementById("roll-cite").textContent=myDice.text;
+	//document.getElementById("score-text").textContent=myGameArea.frameNo;
+	//document.getElementById("roll-text").textContent=myDice.text;
+	//document.getElementById("roll-code").textContent=myDice.text;
+	//document.getElementById("roll-cite").textContent=myDice.text;
     myDice.update();
     myGamePiece.newPos();
     myGamePiece.update();
-}
-
-function everyinterval(n) {
-    if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
-    return false;
-}
-
-function accelerate(n) {
-    myGamePiece.gravity = n;
 }
 
 function updatePlayer(n,roll) {
@@ -113,6 +131,7 @@ function updatePlayer(n,roll) {
    
    if (pos2 > pos0) {
      document.getElementById("dice_button").disabled = true;
+     document.getElementById("dice_button").style.filter = 'invert(40%)';
 
      for (var i=0; i<roll; i++) {
        console.log("step pos0:" + pos0 + " pos:"+(pos0+i+1) + " pos2:"+pos2+ " roll:"+roll);
@@ -122,6 +141,7 @@ function updatePlayer(n,roll) {
 
      setTimeout(function() { 
 	      document.getElementById("dice_button").disabled = false;
+          document.getElementById("dice_button").style.filter = 'invert(0%)';
 	      document.getElementById("img_currentPlayer").src=myGameInfo.player[currPlayer].pic;
 	    }
         , roll*500, n, pos0+i+1 );
@@ -180,53 +200,79 @@ function updatePlayerUI(n,pos2) {
    //$("roll-text").textContent("lovas");
    document.getElementById(id_img).width =  Math.floor( cellWidth * 0.8 );
    document.getElementById(id_img).height = Math.floor( cellHeight * 0.8 );
-   document.getElementById("roll-code").textContent=" roll:"+(roll+1) 
-   + "  y:"+y2  + " y3:" + (myGameArea.table_rows - y2) + "  x:"+x2
-   + "  top:"+ xx.style.top + "  H:"+ctx.clientHeight;
-   document.getElementById("roll-value").textContent=roll;
+   //document.getElementById("roll-code").textContent=" roll:"+(roll+1) 
+   //+ "  y:"+y2  + " y3:" + (myGameArea.table_rows - y2) + "  x:"+x2
+   //+ "  top:"+ xx.style.top + "  H:"+ctx.clientHeight;
+   //document.getElementById("roll-value").textContent=roll;
 
-   $("textarea#roll-text").val("lovas");
+   //$("textarea#roll-text").val("lovas");
    $("#player"+(n+1)).stop(true,true).animate({left: newX,top:newY});  
 }
+
 function rollDice() {
-    //n = (n+1) % 30;
-   //var roll= Math.floor(Math.random() * max);
-   var roll= Math.floor(Math.random() * 6) + 1;
-   //roll = 1;
-   //roll = n;
-  //n = (n+1) % 30;
-//  numPlayers++;
+   var roll= Math.floor(Math.random() * myGameInfo.dice) + 1;
    
    updatePlayer(currPlayer, roll);
    currPlayer = (currPlayer+1) % numPlayers;
-   //document.getElementById("img_currentPlayer").src=myGameInfo.player[currPlayer].pic;
-   
-   //document.getElementById("controls").textContent="lovas";
    //return myDice.value;
 }
 
 function funcOnResize() {
-  updatePlayerUI(0);
+	var imgw = document.getElementById("img-table").clientWidth / (MAX_PLAYERS + 2);
+	var imgh = document.getElementById("img-table").clientHeight / (MAX_PLAYERS + 2);
+
+    resizeFigure("img_currentPlayer", imgw, imgh)
+    resizeFigure("img-dice", imgw, imgh)
+    for (var i2=1; i2 <= MAX_PLAYERS; i2++) {
+	    resizeFigure("button_p"+i2, imgw, imgh)
+        updatePlayerUI(i2 - 1 , myGameInfo.player[i2 - 1].pos);
+    }
 }
+function resizeFigure(id, w, h) {
+    for (var i2=1; i2 <= MAX_PLAYERS; i2++) {
+        document.getElementById(id).width = w;
+        document.getElementById(id).height = h;
+        updatePlayerUI(i2 - 1 , myGameInfo.player[i2 - 1].pos);
+    }
+}
+
 function togglePlayer(n) {
-  document.getElementById("button_p"+n+"b").disabled = true;
-  document.getElementById("button_p"+n).style.filter = 'grayscale(1)';
-  var pdiv = document.getElementById("player"+(numPlayers+1));
-  pdiv.style.display='flex';
-  console.log("toggle " + JSON.stringify(myGameInfo.player[numPlayers],null,2));
-  myGameInfo.player[numPlayers].pic = myPlayerPics.img[n];
-  //myGameInfo.player[numPlayers].pos = 1;
-  //myGameInfo.player[numPlayers].roll = 0;
-  document.getElementById("player"+(numPlayers+1)+"-pic").src = myGameInfo.player[numPlayers].pic;
-  document.getElementById("img_currentPlayer").src=myGameInfo.player[numPlayers].pic;
-  //updatePlayerUI(numPlayers);
-  if (currPlayer == 0) {
-     currPlayer = numPlayers;
+  console.log("togglePlayer n:" + n + " info:" + (typeof myGameInfo.button2idx[n]));
+  if (typeof myGameInfo.button2idx[n] === 'undefined') {
+	  //document.getElementById("button_p"+n+"b").disabled = true;
+	  document.getElementById("button_p"+n).style.filter = 'grayscale(1)';
+	  var pdiv = document.getElementById("player"+(numPlayers+1));
+	  pdiv.style.display='flex';
+	  console.log("toggle " + JSON.stringify(myGameInfo.player[numPlayers],null,2));
+	  myGameInfo.player[numPlayers].pic = myPlayerPics.img[n];
+	  //myGameInfo.player[numPlayers].pos = 1;
+	  //myGameInfo.player[numPlayers].roll = 0;
+	  document.getElementById("player"+(numPlayers+1)+"-pic").src = myGameInfo.player[numPlayers].pic;
+	  //updatePlayerUI(numPlayers);
+	  if ((currPlayer == 0) && (myGameInfo.player[0].pos != 1)) {
+		 currPlayer = numPlayers;
+         document.getElementById("img_currentPlayer").src=myGameInfo.player[numPlayers].pic;
+	  }
+	  myGameInfo.player[numPlayers].state = 1;
+	  updatePlayer(numPlayers,1);
+	  document.getElementById("dice_button").disabled = false;
+      document.getElementById("dice_button").style.filter = 'invert(0%)';
+
+	  numPlayers++;
+	  myGameInfo.button2idx[n] = numPlayers;
+  } else {
+	  myGameInfo.player[myGameInfo.button2idx[n]].state = 2;
+	  document.getElementById("button_p"+n).style.filter = 'invert(50%)';
+	  document.getElementById("player"+myGameInfo.button2idx[n]+"-pic").style.filter = 'invert(50%)';
   }
-  updatePlayer(numPlayers,1);
-  numPlayers++;
-  document.getElementById("dice_button").disabled = false;
 }
+
+function nextTable() {
+   myGameInfo.table_idx = (myGameInfo.table_idx + 1) % tables.length;
+   startGame();
+}
+
+
 
 </script>
 </head>
@@ -234,23 +280,24 @@ function togglePlayer(n) {
  <div id='div-gamearea' style="border: 1px;width: 90%;height: 70%;position:relative">
  max-width: 100%;
     max-height: 100%;"
+    <textarea id='roll-text' rows='2' cols='15' width="40%" readonly>textarea</textarea>
+    <textarea id='roll-value' rows='2' cols='1' width="40%" readonly></textarea>
+    <code id='roll-code'>1</code>
+    <cite id='roll-cite'>2</cite>
+    <br/>score: <cite id='score-text'>aa</cite>roll
 -->
 <body onload="startGame()" onresize="funcOnResize()">
 <div id="screen" style="border: 1px;width: 100%;height:100%;position:relative;">
  <div id='heading' style="height:15%;">
   <div id='title'><h1>L&eacute;tr&aacute;s j&aacute;t&eacute;k</h1></div>
-  <div id='score' style="object-fit:contain;">
+  <div id='score' style="object-fit:contain;">Te jössz: 
     <img id='img_currentPlayer' src="" height="42" width="42" style="max-width:100%;max-height:100%;object-fit:contain;">
-    <textarea id='roll-text' rows='2' cols='15' width="40%" readonly>textarea</textarea>
-    <button id='dice_button' onmousedown="rollDice()" disabled>. DOB&Aacute;S .</button>
-    <textarea id='roll-value' rows='2' cols='1' width="40%" readonly></textarea>
-    <br/>score: <cite id='score-text'>aa</cite>roll
-    <code id='roll-code'>1</code>
-    <cite id='roll-cite'>2</cite>
+    Dobj a kock&aacute;val <button id='dice_button' onmousedown="rollDice()" disabled><img id='img-dice' src="dice.gif" height="42" width="42"></button>
+    Pályacsere <button id='table_button' onmousedown="nextTable()">itt</button>
   </div>
  </div>
  <div id='div-gamearea' style="height:70%;position:relative;object-fit:contain;">
-   <img id='img-table' src = "snake-4b.jpg" style="max-width:100%;max-height:100%;object-fit:contain;">
+   <img id='img-table' src = "table_100.jpg" style="max-width:100%;max-height:100%;object-fit:contain;">
    <div id='player1' style="position:absolute;float: left;left: 10px;top:10px;display:none;">
       <img id='player1-pic' src="starfish_PNG34.png" height="42" width="42">
    </div>
@@ -271,10 +318,9 @@ function togglePlayer(n) {
    </div>
  </div>
  <div id='controls'  style="border: 1px;height: 15%;position:relative">
+  V&aacute;lassz figur&aacute;t:
  <table>
  <tr  id='players' style="height:15%;width:100%">
-  <td width="10%"></td>
-  <td>V&aacute;lassz figur&aacute;t: </td>
   <td><button id='button_p1b' onmousedown="togglePlayer(1)"><img id='button_p1' src="" height="42" width="42"></button></td>
   <td><button id='button_p2b' onmousedown="togglePlayer(2)"><img id='button_p2' src="" height="42" width="42"></button></td>
   <td><button id='button_p3b' onmousedown="togglePlayer(3)"><img id='button_p3' src="" height="42" width="42"></button></td>
