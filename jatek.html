@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+   html, body { height:100%; background-color: white;}
+   body { margin:0; padding:0; overflow:hidden; }
+canvas {
+    border:1px solid #d3d3d3;
+    background-color: #f1f1f1;
+}
+h1,h2 { margin:0;}
+textarea { resize:none; }
+.gamearea {
+   border: 1px;
+   width: 200px;
+   height: 200px;
+   position:relative;
+}
+</style>
+
+<script>
+var MAX_PLAYERS = 6;
+var myPlayerPics = {
+   img : [ "snake-4b.jpg", "figure1.png", "figure2.png", "figure3.png", "figure4.png", "figure5.png", "figure6.png" ]
+}
+var numPlayers = 0;
+var currPlayer = 0;
+
+var myGamePiece;
+var myObstacles = [];
+var myScore;
+var myDice;
+var myimg;
+var n = 1;
+var num_players = 2;
+
+function startGame() {
+    document.getElementById("img-table").src=myPlayerPics.img[0];
+    document.getElementById("dice_button").disabled = true;
+
+	document.getElementById('dice_button').onmousedown = function() {rollDice();};
+    document.getElementById("dice_button").textarea = ". DOB&Aacute;S .";
+    for (var i=1; i <= MAX_PLAYERS; i++) {
+        document.getElementById("button_p"+i).src = myPlayerPics.img[i];
+        document.getElementById("button_p"+i+"b").disabled = false;
+        document.getElementById("button_p"+i).style.filter = 'grayscale(0)';
+        document.getElementById("player"+i).style.display='none';
+    }
+}
+var myGameInfo = {
+   player : [ { name:"player1", pos:0, roll:0, x:0, y:0, pic:0} ,
+              { name:"player2", pos:0, roll:0, x:0, y:0, pic:0} ,
+              { name:"player3", pos:0, roll:0, x:0, y:0, pic:0} ,
+              { name:"player4", pos:0, roll:0, x:0, y:0, pic:0} ,
+              { name:"player5", pos:0, roll:0, x:0, y:0, pic:0} ,
+              { name:"player6", pos:0, roll:0, x:0, y:0, pic:0} ,
+            ],
+	slider : { 2:37, 10:32, 27:46, 33:6, 41:20, 49:9, 51:68, 56:53
+	   , 61:79, 62:5, 65:84, 71:91, 81:100, 87:16, 93:73, 95:75, 98:64
+       , 3:13, 4:14, 5:16, 6:16 }
+			
+}
+var myGameArea = {
+    table_img : "snake_ladder_1.jpg",
+	table_rows : 2,
+	table_cols : 10,
+}
+
+function playerWins(n) {
+  document.getElementById("dice_button").disabled = false;
+  document.getElementById('dice_button').onmousedown = function() {startGame();};
+  //document.getElementById("dice_button").textarea = ". ÚJRAKEZDÉS .";
+  document.getElementById("img-table").src=myGameInfo.player[n].pic;
+  for (var i=1; i <= MAX_PLAYERS; i++) {
+    document.getElementById("player"+i).style.display='none';
+    document.getElementById("button_p"+i+"b").disabled = true;
+    document.getElementById("button_p"+i).style.filter = 'grayscale(1)';
+  }
+}
+
+
+function updateGameArea() {
+    var x, height, gap, minHeight, maxHeight, minGap, maxGap;
+    myScore.text="SCORE: " + myGameArea.frameNo;
+    myScore.update();
+	document.getElementById("score-text").textContent=myGameArea.frameNo;
+	document.getElementById("roll-text").textContent=myDice.text;
+	document.getElementById("roll-code").textContent=myDice.text;
+	document.getElementById("roll-cite").textContent=myDice.text;
+    myDice.update();
+    myGamePiece.newPos();
+    myGamePiece.update();
+}
+
+function everyinterval(n) {
+    if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
+    return false;
+}
+
+function accelerate(n) {
+    myGamePiece.gravity = n;
+}
+
+function updatePlayer(n,roll) {
+   var max = myGameArea.table_rows * myGameArea.table_cols;
+   var pos0 = myGameInfo.player[n].pos;
+   
+   var pos2 = pos0 + roll;
+   if (pos2 > max) {
+      pos2 = max;
+	  roll = pos2 - pos0;
+   }
+   
+   if (pos2 > pos0) {
+     document.getElementById("dice_button").disabled = true;
+
+     for (var i=0; i<roll; i++) {
+       console.log("step pos0:" + pos0 + " pos:"+(pos0+i+1) + " pos2:"+pos2+ " roll:"+roll);
+       //updatePlayerUI(n,pos);
+	   setTimeout(updatePlayerUI, i*500,n,pos0+i+1);
+     }
+
+     setTimeout(function() { 
+	      document.getElementById("dice_button").disabled = false;
+	      document.getElementById("img_currentPlayer").src=myGameInfo.player[currPlayer].pic;
+	    }
+        , roll*500, n, pos0+i+1 );
+   } else {
+     pos2=0;
+     updatePlayerUI(n,pos2);
+   }
+
+   pos3 = myGameInfo.slider[pos2];
+   console.log("slide pos3:" + pos3 );
+   if (pos3 > 0) {
+	  setTimeout(updatePlayerUI, roll*500,n,pos3);
+	  pos2 = pos3;
+   }
+   
+
+
+   myGameInfo.player[n].roll = roll;
+   myGameInfo.player[n].pos = pos2;
+   //updatePlayerUI(n);
+   
+   if (pos2 >= max) {
+   	  setTimeout(playerWins, roll*500,n);
+   }
+}
+
+function updatePlayerUI(n,pos2) {
+   //var ctx = document.getElementById("div-gamearea");
+   var ctx = document.getElementById("img-table");
+   var xx = document.getElementById("player"+(n+1));
+   var cellHeight = ctx.clientHeight / myGameArea.table_rows;   
+   var cellWidth = ctx.clientWidth / myGameArea.table_cols;  
+
+   var id_img = "player"+(n+1)+"-pic";
+   console.log("updatePlayerUI n:" + n + " pic:"+id_img + " pos:"+pos2);
+
+
+   var curr=pos2-1;//myGameInfo.player[n].pos;
+   var roll=myGameInfo.player[n].roll;
+
+   var x2 = 0;
+   var y2 = 0;
+   if (curr > 0) {
+      x2 = Math.floor( curr % myGameArea.table_cols );
+      y2 = Math.floor( curr / myGameArea.table_cols );
+   }
+   if (y2 % 2 == 1) {
+      x2 = myGameArea.table_cols - x2 - 1;
+   }
+   var ox = (cellWidth - xx.clientWidth ) / 2;
+   var oy = (cellHeight - xx.clientHeight ) / 2;
+   var newY = ((myGameArea.table_rows - y2 - 1) * (ctx.clientHeight / myGameArea.table_rows) + oy) + 'px';
+   var newX = (x2 * (ctx.clientWidth / myGameArea.table_cols)+ox) + 'px';
+   //xx.style.top = ((myGameArea.table_rows - y2 - 1) * (ctx.clientHeight / myGameArea.table_rows) + oy) + 'px';
+   //xx.style.left = (x2 * (ctx.clientWidth / myGameArea.table_cols)+ox) + 'px';
+   //$("roll-text").textContent("lovas");
+   document.getElementById(id_img).width =  Math.floor( cellWidth * 0.8 );
+   document.getElementById(id_img).height = Math.floor( cellHeight * 0.8 );
+   document.getElementById("roll-code").textContent=" roll:"+(roll+1) 
+   + "  y:"+y2  + " y3:" + (myGameArea.table_rows - y2) + "  x:"+x2
+   + "  top:"+ xx.style.top + "  H:"+ctx.clientHeight;
+   document.getElementById("roll-value").textContent=roll;
+
+   $("textarea#roll-text").val("lovas");
+   $("#player"+(n+1)).stop(true,true).animate({left: newX,top:newY});  
+}
+function rollDice() {
+    //n = (n+1) % 30;
+   //var roll= Math.floor(Math.random() * max);
+   var roll= Math.floor(Math.random() * 6) + 1;
+   //roll = 1;
+   //roll = n;
+  //n = (n+1) % 30;
+//  numPlayers++;
+   
+   updatePlayer(currPlayer, roll);
+   currPlayer = (currPlayer+1) % numPlayers;
+   //document.getElementById("img_currentPlayer").src=myGameInfo.player[currPlayer].pic;
+   
+   //document.getElementById("controls").textContent="lovas";
+   //return myDice.value;
+}
+
+function funcOnResize() {
+  updatePlayerUI(0);
+}
+function togglePlayer(n) {
+  document.getElementById("button_p"+n+"b").disabled = true;
+  document.getElementById("button_p"+n).style.filter = 'grayscale(1)';
+  var pdiv = document.getElementById("player"+(numPlayers+1));
+  pdiv.style.display='flex';
+  console.log("toggle " + JSON.stringify(myGameInfo.player[numPlayers],null,2));
+  myGameInfo.player[numPlayers].pic = myPlayerPics.img[n];
+  //myGameInfo.player[numPlayers].pos = 1;
+  //myGameInfo.player[numPlayers].roll = 0;
+  document.getElementById("player"+(numPlayers+1)+"-pic").src = myGameInfo.player[numPlayers].pic;
+  document.getElementById("img_currentPlayer").src=myGameInfo.player[numPlayers].pic;
+  //updatePlayerUI(numPlayers);
+  if (currPlayer == 0) {
+     currPlayer = numPlayers;
+  }
+  updatePlayer(numPlayers,1);
+  numPlayers++;
+  document.getElementById("dice_button").disabled = false;
+}
+
+</script>
+</head>
+<!--
+ <div id='div-gamearea' style="border: 1px;width: 90%;height: 70%;position:relative">
+ max-width: 100%;
+    max-height: 100%;"
+-->
+<body onload="startGame()" onresize="funcOnResize()">
+<div id="screen" style="border: 1px;width: 100%;height:100%;position:relative;">
+ <div id='heading' style="height:15%;">
+  <div id='title'><h1>L&eacute;tr&aacute;s j&aacute;t&eacute;k</h1></div>
+  <div id='score' style="object-fit:contain;">
+    <img id='img_currentPlayer' src="" height="42" width="42" style="max-width:100%;max-height:100%;object-fit:contain;">
+    <textarea id='roll-text' rows='2' cols='15' width="40%" readonly>textarea</textarea>
+    <button id='dice_button' onmousedown="rollDice()" disabled>. DOB&Aacute;S .</button>
+    <textarea id='roll-value' rows='2' cols='1' width="40%" readonly></textarea>
+    <br/>score: <cite id='score-text'>aa</cite>roll
+    <code id='roll-code'>1</code>
+    <cite id='roll-cite'>2</cite>
+  </div>
+ </div>
+ <div id='div-gamearea' style="height:70%;position:relative;object-fit:contain;">
+   <img id='img-table' src = "snake-4b.jpg" style="max-width:100%;max-height:100%;object-fit:contain;">
+   <div id='player1' style="position:absolute;float: left;left: 10px;top:10px;display:none;">
+      <img id='player1-pic' src="starfish_PNG34.png" height="42" width="42">
+   </div>
+   <div id='player2' style="position:absolute;float: left;left: 10px;top:10px;display:none;">
+      <img id='player2-pic' src="starfish_PNG34.png" height="42" width="42">
+   </div>
+   <div id='player3' style="position:absolute;float: left;left: 10px;top:10px;display:none;">
+      <img id='player3-pic' src="starfish_PNG34.png" height="42" width="42">
+   </div>
+   <div id='player4' style="position:absolute;float: left;left: 10px;top:10px;display:none;">
+      <img id='player4-pic' src="starfish_PNG34.png" height="42" width="42">
+   </div>
+   <div id='player5' style="position:absolute;float: left;left: 10px;top:10px;display:none;">
+      <img id='player5-pic' src="starfish_PNG34.png" height="42" width="42">
+   </div>
+   <div id='player6' style="position:absolute;float: left;left: 10px;top:10px;display:none;">
+      <img id='player6-pic' src="starfish_PNG34.png" height="42" width="42">
+   </div>
+ </div>
+ <div id='controls'  style="border: 1px;height: 15%;position:relative">
+ <table>
+ <tr  id='players' style="height:15%;width:100%">
+  <td width="10%"></td>
+  <td>V&aacute;lassz figur&aacute;t: </td>
+  <td><button id='button_p1b' onmousedown="togglePlayer(1)"><img id='button_p1' src="" height="42" width="42"></button></td>
+  <td><button id='button_p2b' onmousedown="togglePlayer(2)"><img id='button_p2' src="" height="42" width="42"></button></td>
+  <td><button id='button_p3b' onmousedown="togglePlayer(3)"><img id='button_p3' src="" height="42" width="42"></button></td>
+  <td><button id='button_p4b' onmousedown="togglePlayer(4)"><img id='button_p4' src="" height="42" width="42"></button></td>
+  <td><button id='button_p5b' onmousedown="togglePlayer(5)"><img id='button_p5' src="" height="42" width="42"></button></td>
+  <td><button id='button_p6b' onmousedown="togglePlayer(6)"><img id='button_p6' src="" height="42" width="42"></button></td>
+ </tr>
+ </table>
+<!--
+ <div id='div-gamearea' style="border: 1px;width: 90%;height: 70%;position:relative">
+ max-width: 100%;
+    max-height: 100%;"
+    <button onmousedown="accelerate(-0.2)" onmouseup="accelerate(0.05)">ACCELERATE</button>
+    <button onmousedown="rollDice()">ROLL</button>
+    <button onmousedown="toggle()"><img id='button_p1' src = "pineapple_PNG2733.png" height="42" width="42"></button>
+    <p>Use the ACCELERATE button to stay in the air</p>
+    <p>How long can you stay alive?</p>
+-->
+ </div>
+</div>
+</body>
+</html>
