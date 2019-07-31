@@ -12,6 +12,7 @@ canvas {
 }
 h1,h2 { margin:0;}
 textarea { resize:none; }
+table { border-collapse:collapse }
 .gamearea {
    border: 1px;
    width: 200px;
@@ -23,7 +24,7 @@ textarea { resize:none; }
 <script>
 var MAX_PLAYERS = 6;
 var myPlayerPics = {
-   img : [ "snake-4b.jpg", "figure1.png", "figure2.png", "figure3.png", "figure4.png", "figure7.png", "figure6.png" ]
+   img : [ "figure0.jpg", "figure1.png", "figure2.png", "figure3.png", "figure4.png", "figure7.png", "figure6.png" ]
 }
 var tables = [ { img:'table_6x5.jpg', rows:5, cols: 6, dice: 4
                , slide : { 3:22, 5:8, 11:26, 20:29, 17:4, 19:7, 21:9, 27:1 } }
@@ -75,6 +76,9 @@ function startGame() {
 
 	document.getElementById('dice_button').onmousedown = function() {rollDice();};
 	document.getElementById("dice_button").style.filter = 'invert(40%)';
+    document.getElementById("img_currentPlayer").src=myPlayerPics.img[0];
+	delete document.getElementById("img-table").width;
+	delete document.getElementById("img-table").height;
 	
     for (var i=1; i <= MAX_PLAYERS; i++) {
         document.getElementById("button_p"+i).src = myPlayerPics.img[i];
@@ -96,8 +100,10 @@ function playerWins(n) {
   document.getElementById('dice_button').onmousedown = function() {startGame();};
   //document.getElementById("dice_button").textarea = ". ÚJRAKEZDÉS .";
   document.getElementById("img-table").src=myGameInfo.player[n].pic;
-  document.getElementById("img-table").width=imgw;
-  document.getElementById("img-table").height=imgh;
+  //document.getElementById("img-table").width=imgw;
+  //document.getElementById("img-table").height=imgh;
+  document.getElementById("img_currentPlayer").src='';
+
   for (var i=1; i <= MAX_PLAYERS; i++) {
     document.getElementById("player"+i).style.display='none';
     document.getElementById("button_p"+i+"b").disabled = true;
@@ -110,10 +116,6 @@ function updateGameArea() {
     var x, height, gap, minHeight, maxHeight, minGap, maxGap;
     myScore.text="SCORE: " + myGameArea.frameNo;
     myScore.update();
-	//document.getElementById("score-text").textContent=myGameArea.frameNo;
-	//document.getElementById("roll-text").textContent=myDice.text;
-	//document.getElementById("roll-code").textContent=myDice.text;
-	//document.getElementById("roll-cite").textContent=myDice.text;
     myDice.update();
     myGamePiece.newPos();
     myGamePiece.update();
@@ -128,23 +130,22 @@ function updatePlayer(n,roll) {
       pos2 = max;
 	  roll = pos2 - pos0;
    }
+
+  console.log("updatePlayer n:" + n + " roll:" + roll);
    
    if (pos2 > pos0) {
      document.getElementById("dice_button").disabled = true;
-     document.getElementById("dice_button").style.filter = 'invert(40%)';
+	 updateDice(99);
+     //document.getElementById("dice_button").style.filter = 'invert(40%)';
 
-     for (var i=0; i<roll; i++) {
-       console.log("step pos0:" + pos0 + " pos:"+(pos0+i+1) + " pos2:"+pos2+ " roll:"+roll);
+     setTimeout(updateDice,500,roll);
+     for (var i=1; i<=roll; i++) {
+       console.log("step pos0:" + pos0 + " pos:"+(pos0+i) + " pos2:"+pos2+ " roll:"+roll);
        //updatePlayerUI(n,pos);
-	   setTimeout(updatePlayerUI, i*500,n,pos0+i+1);
+	   setTimeout(updatePlayerUI, 500 + i*500,n,pos0+i);
      }
 
-     setTimeout(function() { 
-	      document.getElementById("dice_button").disabled = false;
-          document.getElementById("dice_button").style.filter = 'invert(0%)';
-	      document.getElementById("img_currentPlayer").src=myGameInfo.player[currPlayer].pic;
-	    }
-        , roll*500, n, pos0+i+1 );
+
    } else {
      pos2=0;
      updatePlayerUI(n,pos2);
@@ -152,19 +153,41 @@ function updatePlayer(n,roll) {
 
    pos3 = myGameInfo.slider[pos2];
    console.log("slide pos3:" + pos3 );
+   var moreWaitMs = 0;
    if (pos3 > 0) {
-	  setTimeout(updatePlayerUI, roll*500,n,pos3);
+	  setTimeout(updatePlayerUI, 1000 + roll*500,n,pos3);
 	  pos2 = pos3;
+	  moreWaitMs=500;
    }
-   
-
 
    myGameInfo.player[n].roll = roll;
    myGameInfo.player[n].pos = pos2;
+
+   // next player, set player image, reset dice image
+   setTimeout(function() { 
+      document.getElementById("dice_button").disabled = false;
+      //document.getElementById("dice_button").style.filter = 'invert(0%)';
+      document.getElementById("img_currentPlayer").src=myGameInfo.player[currPlayer].pic;
+     }
+     , 1000 + roll*500 + moreWaitMs, n, pos0+i+1 );
+   setTimeout(updateDice, 1000 + roll*500 + moreWaitMs, 0);
+   
    //updatePlayerUI(n);
    
    if (pos2 >= max) {
-   	  setTimeout(playerWins, roll*500,n);
+   	  setTimeout(playerWins, 1000+roll*500,n);
+   }
+}
+
+function updateDice(n) {
+   console.log("updateDice:" + n );
+
+   if (n == 99) {
+     document.getElementById("img-dice").src = 'dice-fast.gif';
+   } else if (n > 0) {
+     document.getElementById("img-dice").src = 'dice_'+n+'.png';
+   } else {
+     document.getElementById("img-dice").src = 'dice.gif';
    }
 }
 
@@ -225,7 +248,7 @@ function funcOnResize() {
     resizeFigure("img-dice", imgw, imgh)
     for (var i2=1; i2 <= MAX_PLAYERS; i2++) {
 	    resizeFigure("button_p"+i2, imgw, imgh)
-        updatePlayerUI(i2 - 1 , myGameInfo.player[i2 - 1].pos);
+        //updatePlayerUI(i2 - 1 , myGameInfo.player[i2 - 1].pos);
     }
 }
 function resizeFigure(id, w, h) {
@@ -248,16 +271,15 @@ function togglePlayer(n) {
 	  //myGameInfo.player[numPlayers].pos = 1;
 	  //myGameInfo.player[numPlayers].roll = 0;
 	  document.getElementById("player"+(numPlayers+1)+"-pic").src = myGameInfo.player[numPlayers].pic;
-	  document.getElementById("player"+(numPlayers+1)+"-pic").style.filter = 'none';
 	  //updatePlayerUI(numPlayers);
 	  if ((currPlayer == 0) && (myGameInfo.player[0].pos != 1)) {
 		 currPlayer = numPlayers;
-          document.getElementById("img_currentPlayer").src=myGameInfo.player[numPlayers].pic;
+         document.getElementById("img_currentPlayer").src=myGameInfo.player[numPlayers].pic;
 	  }
 	  myGameInfo.player[numPlayers].state = 1;
 	  updatePlayer(numPlayers,1);
 	  document.getElementById("dice_button").disabled = false;
-          document.getElementById("dice_button").style.filter = 'invert(0%)';
+      document.getElementById("dice_button").style.filter = 'invert(0%)';
 
 	  numPlayers++;
 	  myGameInfo.button2idx[n] = numPlayers;
@@ -293,8 +315,8 @@ function nextTable() {
   <div id='title'><h1>L&eacute;tr&aacute;s j&aacute;t&eacute;k</h1></div>
   <div id='score' style="object-fit:contain;">Te jössz: 
     <img id='img_currentPlayer' src="" height="42" width="42" style="max-width:100%;max-height:100%;object-fit:contain;">
-    Dobj a kock&aacute;val <button id='dice_button' onmousedown="rollDice()" disabled><img id='img-dice' src="dice.gif" height="42" width="42"></button>
-    Pályacsere <button id='table_button' onmousedown="nextTable()">itt</button>
+    Dobj!<button id='dice_button' onmousedown="rollDice()" disabled><img id='img-dice' src="dice.gif" height="42" width="42"></button>
+    .. <button id='table_button' onmousedown="nextTable()">pálya</button>
   </div>
  </div>
  <div id='div-gamearea' style="height:70%;position:relative;object-fit:contain;">
