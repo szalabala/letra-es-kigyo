@@ -4,20 +4,34 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <style>
-   html, body { height:100%; background-color: white;}
-   body { margin:0; padding:0; overflow:hidden; }
-canvas {
-    border:1px solid #d3d3d3;
-    background-color: #f1f1f1;
-}
+html, body { height:100%; background-color: white;}
+body { margin:0; padding:0; overflow:hidden; }
 h1,h2 { margin:0;}
 textarea { resize:none; }
 table { border-collapse:collapse }
+button {
+	padding: 0;
+	background: none;
+	border-radius: 8px;
+}
 .gamearea {
-   border: 1px;
-   width: 200px;
-   height: 200px;
-   position:relative;
+	border: 1px;
+	width: 200px;
+	height: 200px;
+	position:relative;
+	text-align: center;
+}
+.figure {
+	position:absolute;
+	float:left;
+	left:10px;
+	top:10px;
+	display:none;
+}
+.scaling {
+	max-width:100%;
+	max-height:100%;
+	object-fit:contain;
 }
 </style>
 
@@ -74,17 +88,16 @@ function startGame() {
 	myGameInfo.dice = tables[myGameInfo.table_idx].dice;
     document.getElementById("dice_button").disabled = true;
 
-	document.getElementById('dice_button').onmousedown = function() {rollDice();};
+	document.getElementById('dice_button').onmousedown = function() { rollDice();};
 	document.getElementById("dice_button").style.filter = 'invert(40%)';
     document.getElementById("img_currentPlayer").src=myPlayerPics.img[0];
-	delete document.getElementById("img-table").width;
-	delete document.getElementById("img-table").height;
 	
     for (var i=1; i <= MAX_PLAYERS; i++) {
         document.getElementById("button_p"+i).src = myPlayerPics.img[i];
         document.getElementById("button_p"+i+"b").disabled = false;
         document.getElementById("button_p"+i).style.filter = 'grayscale(0)';
         document.getElementById("player"+i).style.display='none';
+		document.getElementById("player"+i+"-pic").style.filter = 'none';
 		myGameInfo.player[i-1].pos = 0;
 		delete myGameInfo.button2idx[i]
     }
@@ -94,31 +107,21 @@ function startGame() {
 }
 
 function playerWins(n) {
-  var imgw = document.getElementById("img-table").clientWidth;
-  var imgh = document.getElementById("img-table").clientHeight;
-  document.getElementById("dice_button").disabled = false;
-  document.getElementById('dice_button').onmousedown = function() {startGame();};
-  //document.getElementById("dice_button").textarea = ". ÚJRAKEZDÉS .";
-  document.getElementById("img-table").src=myGameInfo.player[n].pic;
-  //document.getElementById("img-table").width=imgw;
-  //document.getElementById("img-table").height=imgh;
-  document.getElementById("img_currentPlayer").src='';
+	var imgw = document.getElementById("img-table").clientWidth;
+	var imgh = document.getElementById("img-table").clientHeight;
+	document.getElementById("dice_button").disabled = false;
+	document.getElementById('dice_button').onmousedown = function() {startGame();};
+	//document.getElementById("dice_button").textarea = ". ÚJRAKEZDÉS .";
+	document.getElementById("img-table").src=myGameInfo.player[n].pic;
+	//document.getElementById("img-table").width=imgw;
+	//document.getElementById("img-table").height=imgh;
+	document.getElementById("img_currentPlayer").src='';
 
-  for (var i=1; i <= MAX_PLAYERS; i++) {
-    document.getElementById("player"+i).style.display='none';
-    document.getElementById("button_p"+i+"b").disabled = true;
-    document.getElementById("button_p"+i).style.filter = 'grayscale(1)';
-  }
-}
-
-
-function updateGameArea() {
-    var x, height, gap, minHeight, maxHeight, minGap, maxGap;
-    myScore.text="SCORE: " + myGameArea.frameNo;
-    myScore.update();
-    myDice.update();
-    myGamePiece.newPos();
-    myGamePiece.update();
+	for (var i=1; i <= MAX_PLAYERS; i++) {
+		document.getElementById("player"+i).style.display='none';
+		document.getElementById("button_p"+i+"b").disabled = true;
+		document.getElementById("button_p"+i).style.filter = 'grayscale(1)';
+	}
 }
 
 function updatePlayer(n,roll) {
@@ -131,12 +134,12 @@ function updatePlayer(n,roll) {
 	  roll = pos2 - pos0;
    }
 
-  console.log("updatePlayer n:" + n + " roll:" + roll);
+	console.log("updatePlayer n:" + n + " roll:" + roll);
+	updatePlayerUI(n,pos0);
    
    if (pos2 > pos0) {
      document.getElementById("dice_button").disabled = true;
 	 updateDice(99);
-     //document.getElementById("dice_button").style.filter = 'invert(40%)';
 
      setTimeout(updateDice,500,roll);
      for (var i=1; i<=roll; i++) {
@@ -144,8 +147,6 @@ function updatePlayer(n,roll) {
        //updatePlayerUI(n,pos);
 	   setTimeout(updatePlayerUI, 500 + i*500,n,pos0+i);
      }
-
-
    } else {
      pos2=0;
      updatePlayerUI(n,pos2);
@@ -196,11 +197,10 @@ function updatePlayerUI(n,pos2) {
    var ctx = document.getElementById("img-table");
    var xx = document.getElementById("player"+(n+1));
    var cellHeight = ctx.clientHeight / myGameArea.table_rows;   
-   var cellWidth = ctx.clientWidth / myGameArea.table_cols;  
+   var cellWidth = ctx.clientWidth / myGameArea.table_cols;
 
    var id_img = "player"+(n+1)+"-pic";
    console.log("updatePlayerUI n:" + n + " pic:"+id_img + " pos:"+pos2);
-
 
    var curr=pos2-1;//myGameInfo.player[n].pos;
    var roll=myGameInfo.player[n].roll;
@@ -217,18 +217,13 @@ function updatePlayerUI(n,pos2) {
    var ox = (cellWidth - xx.clientWidth ) / 2;
    var oy = (cellHeight - xx.clientHeight ) / 2;
    var newY = ((myGameArea.table_rows - y2 - 1) * (ctx.clientHeight / myGameArea.table_rows) + oy) + 'px';
-   var newX = (x2 * (ctx.clientWidth / myGameArea.table_cols)+ox) + 'px';
+   var newX = (x2 * (ctx.clientWidth / myGameArea.table_cols)+ox) + (ctx.offsetLeft) + 'px';
    //xx.style.top = ((myGameArea.table_rows - y2 - 1) * (ctx.clientHeight / myGameArea.table_rows) + oy) + 'px';
    //xx.style.left = (x2 * (ctx.clientWidth / myGameArea.table_cols)+ox) + 'px';
    //$("roll-text").textContent("lovas");
    document.getElementById(id_img).width =  Math.floor( cellWidth * 0.8 );
    document.getElementById(id_img).height = Math.floor( cellHeight * 0.8 );
-   //document.getElementById("roll-code").textContent=" roll:"+(roll+1) 
-   //+ "  y:"+y2  + " y3:" + (myGameArea.table_rows - y2) + "  x:"+x2
-   //+ "  top:"+ xx.style.top + "  H:"+ctx.clientHeight;
-   //document.getElementById("roll-value").textContent=roll;
 
-   //$("textarea#roll-text").val("lovas");
    $("#player"+(n+1)).stop(true,true).animate({left: newX,top:newY});  
 }
 
@@ -241,22 +236,22 @@ function rollDice() {
 }
 
 function funcOnResize() {
-	var imgw = document.getElementById("img-table").clientWidth / (MAX_PLAYERS + 2);
-	var imgh = document.getElementById("img-table").clientHeight / (MAX_PLAYERS + 2);
+	// screen.availWidth, document.body.clientWidth, element div-gamearea clientWidth
+	var imgw = document.getElementById("div-gamearea").clientWidth / (MAX_PLAYERS + 1);
+	var imgh = document.getElementById("div-gamearea").clientHeight / (MAX_PLAYERS + 1);
 
     resizeFigure("img_currentPlayer", imgw, imgh)
     resizeFigure("img-dice", imgw, imgh)
     for (var i2=1; i2 <= MAX_PLAYERS; i2++) {
-	    resizeFigure("button_p"+i2, imgw, imgh)
-        //updatePlayerUI(i2 - 1 , myGameInfo.player[i2 - 1].pos);
+        updatePlayerUI(i2 - 1 , myGameInfo.player[i2 - 1].pos);
+	    resizeFigure("button_p"+i2, imgw, imgh);
     }
 }
+
 function resizeFigure(id, w, h) {
-    for (var i2=1; i2 <= MAX_PLAYERS; i2++) {
-        document.getElementById(id).width = w;
-        document.getElementById(id).height = h;
-        updatePlayerUI(i2 - 1 , myGameInfo.player[i2 - 1].pos);
-    }
+    var s = (w<h) ? w : h;  // hogy négyzet legyen, ne deformáljuk
+	document.getElementById(id).width = s;
+	document.getElementById(id).height = s;
 }
 
 function togglePlayer(n) {
@@ -268,8 +263,6 @@ function togglePlayer(n) {
 	  pdiv.style.display='flex';
 	  console.log("toggle " + JSON.stringify(myGameInfo.player[numPlayers],null,2));
 	  myGameInfo.player[numPlayers].pic = myPlayerPics.img[n];
-	  //myGameInfo.player[numPlayers].pos = 1;
-	  //myGameInfo.player[numPlayers].roll = 0;
 	  document.getElementById("player"+(numPlayers+1)+"-pic").src = myGameInfo.player[numPlayers].pic;
 	  //updatePlayerUI(numPlayers);
 	  if ((currPlayer == 0) && (myGameInfo.player[0].pos != 1)) {
@@ -277,11 +270,12 @@ function togglePlayer(n) {
          document.getElementById("img_currentPlayer").src=myGameInfo.player[numPlayers].pic;
 	  }
 	  myGameInfo.player[numPlayers].state = 1;
+
 	  updatePlayer(numPlayers,1);
 	  document.getElementById("dice_button").disabled = false;
       document.getElementById("dice_button").style.filter = 'invert(0%)';
-
 	  numPlayers++;
+
 	  myGameInfo.button2idx[n] = numPlayers;
   } else {
 	  myGameInfo.player[myGameInfo.button2idx[n]].state = 2;
@@ -311,58 +305,37 @@ function nextTable() {
 -->
 <body onload="startGame()" onresize="funcOnResize()">
 <div id="screen" style="border: 1px;width: 100%;height:100%;position:relative;">
- <div id='heading' style="height:15%;">
-  <div id='title'><h1>L&eacute;tr&aacute;s j&aacute;t&eacute;k</h1></div>
-  <div id='score' style="object-fit:contain;">Te jössz: 
-    <img id='img_currentPlayer' src="" height="42" width="42" style="max-width:100%;max-height:100%;object-fit:contain;">
-    Dobj!<button id='dice_button' onmousedown="rollDice()" disabled><img id='img-dice' src="dice.gif" height="42" width="42"></button>
-    .. <button id='table_button' onmousedown="nextTable()">pálya</button>
-  </div>
- </div>
- <div id='div-gamearea' style="height:70%;position:relative;object-fit:contain;">
-   <img id='img-table' src = "table_100.jpg" style="max-width:100%;max-height:100%;object-fit:contain;">
-   <div id='player1' style="position:absolute;float: left;left: 10px;top:10px;display:none;">
-      <img id='player1-pic' src="starfish_PNG34.png" height="42" width="42">
-   </div>
-   <div id='player2' style="position:absolute;float: left;left: 10px;top:10px;display:none;">
-      <img id='player2-pic' src="starfish_PNG34.png" height="42" width="42">
-   </div>
-   <div id='player3' style="position:absolute;float: left;left: 10px;top:10px;display:none;">
-      <img id='player3-pic' src="starfish_PNG34.png" height="42" width="42">
-   </div>
-   <div id='player4' style="position:absolute;float: left;left: 10px;top:10px;display:none;">
-      <img id='player4-pic' src="starfish_PNG34.png" height="42" width="42">
-   </div>
-   <div id='player5' style="position:absolute;float: left;left: 10px;top:10px;display:none;">
-      <img id='player5-pic' src="starfish_PNG34.png" height="42" width="42">
-   </div>
-   <div id='player6' style="position:absolute;float: left;left: 10px;top:10px;display:none;">
-      <img id='player6-pic' src="starfish_PNG34.png" height="42" width="42">
-   </div>
- </div>
- <div id='controls'  style="border: 1px;height: 15%;position:relative">
-  V&aacute;lassz figur&aacute;t:
- <table>
- <tr  id='players' style="height:15%;width:100%">
-  <td><button id='button_p1b' onmousedown="togglePlayer(1)"><img id='button_p1' src="" height="42" width="42"></button></td>
-  <td><button id='button_p2b' onmousedown="togglePlayer(2)"><img id='button_p2' src="" height="42" width="42"></button></td>
-  <td><button id='button_p3b' onmousedown="togglePlayer(3)"><img id='button_p3' src="" height="42" width="42"></button></td>
-  <td><button id='button_p4b' onmousedown="togglePlayer(4)"><img id='button_p4' src="" height="42" width="42"></button></td>
-  <td><button id='button_p5b' onmousedown="togglePlayer(5)"><img id='button_p5' src="" height="42" width="42"></button></td>
-  <td><button id='button_p6b' onmousedown="togglePlayer(6)"><img id='button_p6' src="" height="42" width="42"></button></td>
- </tr>
- </table>
-<!--
- <div id='div-gamearea' style="border: 1px;width: 90%;height: 70%;position:relative">
- max-width: 100%;
-    max-height: 100%;"
-    <button onmousedown="accelerate(-0.2)" onmouseup="accelerate(0.05)">ACCELERATE</button>
-    <button onmousedown="rollDice()">ROLL</button>
-    <button onmousedown="toggle()"><img id='button_p1' src = "pineapple_PNG2733.png" height="42" width="42"></button>
-    <p>Use the ACCELERATE button to stay in the air</p>
-    <p>How long can you stay alive?</p>
--->
- </div>
-</div>
+	<div id='heading' style="height:15%;">
+		<div id='title'><h1>L&eacute;tr&aacute;s j&aacute;t&eacute;k</h1></div>
+			<div id='score' style="object-fit:contain;">Te jössz: 
+				<img id='img_currentPlayer' src="data:," style="max-width:100%;max-height:100%;object-fit:contain;" />
+				Dobj!<button id='dice_button' onmousedown="rollDice()" disabled><img id='img-dice' src="dice.gif" height="42" width="42"></button>
+				.. <button id='table_button' onmousedown="nextTable()">pálya</button>
+			</div>
+		</div>
+<!-- ha a tábla középre kerül, nehezebb számolni style="text-align: center;" -->
+		<div id='div-gamearea' style="height:70%;position:relative;object-fit:contain;text-align: center;">
+			<img id='img-table' class="scaling" src="data:," />
+			<div id='player1' class="figure"><img id='player1-pic' src="data:," /></div>
+			<div id='player2' class="figure"><img id='player2-pic' src="data:," /></div>
+			<div id='player3' class="figure"><img id='player3-pic' src="data:," /></div>
+			<div id='player4' class="figure"><img id='player4-pic' src="data:," /></div>
+			<div id='player5' class="figure"><img id='player5-pic' src="data:," /></div>
+			<div id='player6' class="figure"><img id='player6-pic' src="data:," /></div>
+		</div>
+		<div id='controls'  style="border: 1px;height: 15%;position:relative">
+			V&aacute;lassz figur&aacute;t:
+			<table border="0" cellpadding="0" cellspacing="0" align="center">
+			<tr  id='players' style="height:15%;width:100%">
+			<td><button id='button_p1b' onmousedown="togglePlayer(1)"><img id='button_p1' src="figure1.png" width="42" height="42" /></button></td>
+			<td><button id='button_p2b' onmousedown="togglePlayer(2)"><img id='button_p2' src="figure2.png" /></button></td>
+			<td><button id='button_p3b' onmousedown="togglePlayer(3)"><img id='button_p3' src="figure3.png" /></button></td>
+			<td><button id='button_p4b' onmousedown="togglePlayer(4)"><img id='button_p4' src="figure4.png" /></button></td>
+			<td><button id='button_p5b' onmousedown="togglePlayer(5)"><img id='button_p5' src="figure5.png" /></button></td>
+			<td><button id='button_p6b' onmousedown="togglePlayer(6)"><img id='button_p6' src="figure6.png" /></button></td>
+			</tr>
+			</table>
+		</div>
+	</div>
 </body>
 </html>
