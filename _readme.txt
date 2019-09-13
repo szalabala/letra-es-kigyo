@@ -9,3 +9,8 @@ Szabály: A dobott értéket leléped.
 Dédikéink a játék közben egy mese-világban mozogtak, hiszen a mezőre rajzolt képek biztosan jelentettek valamit.
 
 http://www.jatektan.hu/jatektan/____2012_006/picuriknak_1.pdf
+
+-----------------------------------------------------------------------
+Egyéb linkek:
+http://programarcadegames.com/index.php?lang=hu
+  játékok programozása Pythonnal és Pygame-mel
